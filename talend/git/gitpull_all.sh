@@ -15,19 +15,22 @@ echo "Git pull on subfolders of : $root"
 dirs=$(find ${root} -maxdepth 2 -type d -name ".git")
 for d in $dirs
 do
+	cd "$curdir"
 	gitstatus=""
 	pmaster=""
 
 	d=$(dirname "$d")
-	echo
-	echo "**************************  Pull : $d"
-	echo
 	cd "$d"
+	branch=$(git branch)
+	echo
+	echo "**************************  Pull : $d : on branch : ${branch}"
+	echo
 
-	while [ "$gitstatus" != "y" ] && [ "$gitstatus" != "n" ]
+	while [ "$gitstatus" != "y" ] && [ "$gitstatus" != "n" ] && [ "$gitstatus" != "s" ]
 	do
-		read -p "Git status first ? [y/n] : " gitstatus
+		read -p "Git status first ? [y/n/s(kip)] : " gitstatus
 	done
+	[ $gitstatus = "s" ] && echo "skipping..." && continue
 	[ $gitstatus = "y" ] && git status && echo "Continue..." && read
 
 	while [ "$pmaster" != "y" ] && [ "$pmaster" != "n" ]
@@ -36,6 +39,6 @@ do
 	done
 	[ "$pmaster" = "y" ] && echo "Checkout master..." && git checkout master
 	git pull
-	cd "$curdir"
+	
 	echo
 done
