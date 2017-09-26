@@ -31,7 +31,7 @@ do
 
 	d=$(dirname "$d")
 	cd "$d"
-	branch=$(git branch)
+	branch=$(git rev-parse --abbrev-ref HEAD)
 	echo
 	echo "**************************  Pull : $d : on branch : ${branch}"
 	echo
