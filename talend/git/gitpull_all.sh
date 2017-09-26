@@ -9,6 +9,13 @@
 export root=$(dirname $0)
 export curdir=$(pwd)
 
+[ "$1" = "-h" ] && echo "Usage : $0 [branch to checkout]" && echo "If no branch is given master will be checkouted." && exit 0
+
+co_branch="$1"
+[ -z "${co_branch}" ] && co_branch="master"
+
+echo "Checkouted branch will be : ${co_branch}"
+echo
 
 echo "Git pull on subfolders of : $root"
 
@@ -35,9 +42,9 @@ do
 
 	while [ "$pmaster" != "y" ] && [ "$pmaster" != "n" ]
 	do
-		read -p "Checkout master ? [y/n] : " pmaster
+		read -p "Checkout '$co_branch' ? [y/n] : " pmaster
 	done
-	[ "$pmaster" = "y" ] && echo "Checkout master..." && git checkout master
+	[ "$pmaster" = "y" ] && echo "Checkout '${co_branch}'..." && git checkout $co_branch
 	git pull
 	
 	echo
