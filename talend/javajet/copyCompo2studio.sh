@@ -10,8 +10,9 @@ studio_tdi_conf_dir=${studio_dir}"/configuration"
 export studio_exe="Talend-Studio-win-x86_64.exe"
 export studio_options="-console"
 
-compo=""
-compo_dir="undefined"
+compo="undefined"
+[ "$1" != "" ] && compo="$1"
+compo_dir=${tdi_compos_dir}/${compo}
 
 # Copy component to the studio
 while ! [ -d $compo_dir ]
