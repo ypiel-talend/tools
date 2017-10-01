@@ -1,0 +1,321 @@
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.core.model.metadata.MetadataTalendType    
+    org.talend.core.model.metadata.MappingTypeRetriever     
+    org.talend.core.model.utils.NodeUtil
+    java.util.List
+    java.util.ArrayList
+    java.util.Map
+    java.util.HashMap    
+" 
+skeleton="../templates/db_output_bulk.skeleton"
+%>
+<%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+String globalCid = ElementParameterParser.getValue(node, "__CID__");
+if(globalCid == null || "".equals(globalCid) || "\"\"".equals(globalCid)) {
+	globalCid = cid;
+}
+
+String field_separator = ElementParameterParser.getValue(node, "__FIELDS_TERMINATED_BY__");
+String null_string = ElementParameterParser.getValue(node, "__NULL_STRING__");
+String file = ElementParameterParser.getValue(node, "__REMOTE_FILENAME__");
+String host = ElementParameterParser.getValue(node, "__HOST__");
+String port = ElementParameterParser.getValue(node, "__PORT__");
+String db = ElementParameterParser.getValue(node, "__DBNAME__");
+String dbschema = ElementParameterParser.getValue(node, "__SCHEMA_DB__");
+String user = ElementParameterParser.getValue(node, "__USER__");
+String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
+boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+String escapechar = ElementParameterParser.getValue(node, "__ESCAPE_CHAR__");
+boolean is_escape_char = ("true").equals(ElementParameterParser.getValue(node, "__ESCAPE_CHARACTER_OPTION__"));
+
+String table = ElementParameterParser.getValue(node, "__TABLE__");
+boolean ros = ("true").equals(ElementParameterParser.getValue(node, "__ROS__"));
+boolean exitOnNoRows = ("true").equals(ElementParameterParser.getValue(node, "__EXIT_ON_NO_ROWS__"));
+boolean hasNullString = !null_string.matches("\"\"");
+boolean convertToUppercase = false; // not active this function
+boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+List<IMetadataColumn> columnList = getColumnList(node);    
+String db_version = ElementParameterParser.getValue(node, "__DB_VERSION__");
+
+String copySchema = " (";
+for(int i = 0; i < columnList.size() - 1; i++){
+	copySchema += columnList.get(i).getOriginalDbColumnName() + ", ";
+}
+copySchema += columnList.get(columnList.size() - 1).getOriginalDbColumnName();
+copySchema += ")";
+%>
+String tableName_<%=cid%> = null;
+String dbschema_<%=cid %> = null;
+java.io.FileInputStream fis_<%=cid %> = null;
+java.sql.Connection conn_<%=cid%> = null;
+	<%
+	if(useExistingConnection) {
+    		String connName = ElementParameterParser.getValue(node,"__CONNECTION__");
+    		String conn = "conn_" + connName;
+    		String existDbSchema = "dbschema_" + connName;
+			INode con_node = NodeUtil.getNodeByUniqueName(node.getProcess(),connName);
+			if(con_node!=null){
+				db_version = ElementParameterParser.getValue(con_node,"__DB_VERSION__");
+			}
+	%>
+		dbschema_<%=cid%> = (String)globalMap.get("<%=existDbSchema%>");
+	 	conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+	 <%
+		log4jCodeGenerateUtil.useExistConnection(node);
+	 }else{
+		if("vertica_3.0_jdk_5.jar".equals(db_version) || "vertica_3.5_jdk_5.jar".equals(db_version) || "vertica_4.0_jdk_5.jar".equals(db_version) || "vertica_4.1.7_jdk_5.jar".equals(db_version) || "vertica_4.1.14_jdk_5.jar".equals(db_version)){
+		%>
+	 		String driverClass_<%=cid%> = "com.vertica.Driver";
+		<%
+		}else{
+		%>
+	 		String driverClass_<%=cid%> = "com.vertica.jdbc.Driver";
+		<%
+		}
+		%>
+		java.lang.Class.forName(driverClass_<%=cid%>).newInstance();
+		
+		<%if(dbproperties == null || ("\"\"").equals(dbproperties) || ("").equals(dbproperties)) {%>
+		String url_<%=cid %> = "jdbc:vertica://" + <%=host%> + ":" + <%=port%> + "/" + <%=db%>;
+	    <%} else {%>
+	    String url_<%=cid %> = "jdbc:vertica://" + <%=host%> + ":" + <%=port%> + "/" + <%=db%> + "?" + <%=dbproperties%>;
+	    <%}%>
+	    
+		<%
+		String passwordFieldName = "__PASS__";
+		%>
+		
+		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+	   	
+		dbschema_<%=cid%> = <%=dbschema%>;
+		String dbUser_<%=cid %> = <%=user%>;
+		String dbPwd_<%=cid %> = decryptedPassword_<%=cid%>;
+	<%
+		log4jCodeGenerateUtil.connect(node);
+	}
+	%>
+<%
+String tableAction = ElementParameterParser.getValue(node,"__TABLE_ACTION__");
+String dbmsId = ElementParameterParser.getValue(node,"__MAPPING__");
+
+List<Column> stmtStructure = null;
+Manager manager = null;
+if(columnList != null && columnList.size()>0) {
+	stmtStructure = getManager(dbmsId, cid).createColumnList(columnList, false, null, null);
+}
+if((columnList != null && columnList.size() > 0) || "CLEAR".equals(tableAction) || "NONE".equals(tableAction) || "TRUNCATE".equals(tableAction)){
+%>
+	if(dbschema_<%=cid%> == null || dbschema_<%=cid%>.trim().length() == 0) {
+	    tableName_<%=cid%> = <%=table%>;
+	} else {
+	    tableName_<%=cid%> = dbschema_<%=cid%> + "." + <%=table%>;
+	}
+	
+	<%@ include file="../templates/_tableActionForBulk.javajet"%>
+<%    
+}
+String dataAction = ElementParameterParser.getValue(node,"__DATA_ACTION__");
+%>
+try{
+<%
+if(("UPDATE").equals(dataAction)) {
+    if(columnList != null && columnList.size() > 0) {
+        int keyCount = 0;
+        for(IMetadataColumn column : columnList) {
+            if(column.isKey()) {
+                keyCount++;
+            }
+        }
+        %>
+        int keyCount_<%=cid%> = <%=keyCount%>;
+        if(keyCount_<%=cid%> == 0) {
+            throw new RuntimeException("For bulk update, Schema must have a key at least."); 
+        }
+        tableName_<%=cid%> = "tmp_<%=cid%>" + pid + Thread.currentThread().getId();
+        if(dbschema_<%=cid%> != null && dbschema_<%=cid%>.trim().length() != 0) {
+	    	tableName_<%=cid%> = dbschema_<%=cid%> + "." + tableName_<%=cid%>;
+		}
+        java.sql.Statement stmtCreateTmp_<%=cid%> = conn_<%=cid%>.createStatement();
+		<%if(isLog4jEnabled){%>
+			log.info("<%=cid%> - Creating temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
+		<%}%>
+        stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)");
+        <%if(isLog4jEnabled){%>
+        	log.info("<%=cid%> - Create temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
+        <%}%>
+        stmtCreateTmp_<%=cid%>.close();
+<%
+	}
+}
+if(("INSERT").equals(dataAction) || columnList != null && columnList.size() > 0) {
+		String rejectedDataFile = ElementParameterParser.getValue(node, "__REJECTED_DATA_FILE__");
+		String exceptionFile = ElementParameterParser.getValue(node, "__EXCEPTION_FILE__");
+		boolean useSchema = "true".equals(ElementParameterParser.getValue(node, "__USE_SCHEMA_FOR_COPY__"));
+%>
+		Character OUT_DELIM_<%=cid %> = <%=field_separator%>.charAt(0);
+		<%if(is_escape_char){%>
+		String escapechar_<%=cid %> = <%=escapechar%>;
+		if(!escapechar_<%=cid %>.isEmpty()){
+			escapechar_<%=cid %> = "" + escapechar_<%=cid %>.charAt(0);
+		}
+		<%}%>
+		String sql_<%=cid %> = "COPY " + tableName_<%=cid%> 
+		<%if(useSchema) {%>
+			+ "<%=copySchema %>"
+		<%}%>		
+		+ " FROM STDIN DELIMITER '" +OUT_DELIM_<%=cid %> + "'" 
+		<%if(is_escape_char){%>
+		+ "ESCAPE AS '" + escapechar_<%=cid %> + "'"
+		<%}else{%>
+		+" NO ESCAPE"
+		<%}%>
+	    <%if(hasNullString){
+		%> + " NULL '"  + <%=null_string%> + "'"
+		<%}%>
+		<%if(ros){%> + " DIRECT"<%}%>
+		
+		<%if(("INSERT").equals(dataAction) && rejectedDataFile!=null && !"".equals(rejectedDataFile) && !"\"\"".equals(rejectedDataFile)) {%>
+			+ " REJECTED DATA '" + <%=rejectedDataFile%> + "'"
+		<%}%>
+		
+		<%if(("INSERT").equals(dataAction) && exceptionFile!=null && !"".equals(exceptionFile) && !"\"\"".equals(exceptionFile)) {%>
+			+ " EXCEPTIONS '" + <%=exceptionFile%> + "'"
+		<%}%>
+		;
+		
+		<%if(isLog4jEnabled){%>
+			log.debug("<%=cid%> - Bulk SQL:"+sql_<%=cid%>+".");
+			log.info("<%=cid%> - Bulk inserting data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
+        <%}%>
+    	fis_<%=cid %> = new java.io.FileInputStream(new java.io.File(<%=file%>));
+<%
+	if("vertica_3.0_jdk_5.jar".equals(db_version) || "vertica_3.5_jdk_5.jar".equals(db_version) || "vertica_4.0_jdk_5.jar".equals(db_version) || "vertica_4.1.7_jdk_5.jar".equals(db_version) || "vertica_4.1.14_jdk_5.jar".equals(db_version)){
+%>
+			 java.sql.Statement stmt_<%=cid %> = conn_<%=cid %>.createStatement();
+	    java.sql.ResultSet rs_<%=cid %> = stmt_<%=cid %>.executeQuery("select count(*) from " + tableName_<%=cid%>);
+	    int nbLineBeforeLoad_<%=cid %> = 0;
+	    while (rs_<%=cid %>.next()) {
+	    	nbLineBeforeLoad_<%=cid %> = rs_<%=cid %>.getInt(1);
+		}
+	    ((com.vertica.PGStatement) stmt_<%=cid %>).startCopyIn(sql_<%=cid %>, fis_<%=cid %>);
+	    ((com.vertica.PGStatement) stmt_<%=cid %>).addStreamToCopyIn(fis_<%=cid %>);
+	    ((com.vertica.PGStatement) stmt_<%=cid %>).finishCopyIn();
+	    <%if(isLog4jEnabled){%>
+            log.info("<%=cid%> - Bulk insert data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has finished.");
+        <%}%>
+		rs_<%=cid %> = stmt_<%=cid %>.executeQuery("select count(*) from " + tableName_<%=cid%>);
+	    int nbLineAfterLoad_<%=cid %> = 0;
+	    while (rs_<%=cid %>.next()) {
+	    	nbLineAfterLoad_<%=cid %> = rs_<%=cid %>.getInt(1);
+		}
+		stmt_<%=cid %>.close();
+		if(<%=exitOnNoRows%> && nbLineBeforeLoad_<%=cid %> >= nbLineAfterLoad_<%=cid %>){
+			throw new RuntimeException("No record was inserted in component <%=cid %>");
+		}else{
+			<%if(isLog4jEnabled){%>
+				log.info("<%=cid%> - Number of records inserted to table <%=manager.getLProtectedChar()%>" + tableName_<%=cid %> + "<%=manager.getRProtectedChar()%> by <%=cid %>: " + (nbLineAfterLoad_<%=cid %> - nbLineBeforeLoad_<%=cid %>)+".");
+			<%}%>
+			System.out.println("Number of records inserted to table <%=manager.getLProtectedChar()%>" + tableName_<%=cid %> + "<%=manager.getRProtectedChar()%> by <%=cid %>: " + (nbLineAfterLoad_<%=cid %> - nbLineBeforeLoad_<%=cid %>));
+		}
+		
+		globalMap.put("<%=globalCid %>_ACCEPTED_ROW_NUMBER",nbLineAfterLoad_<%=cid %> - nbLineBeforeLoad_<%=cid %>);	
+		
+<%
+	}else{
+%>
+		 com.vertica.jdbc.VerticaCopyStream vcs_<%=cid%> = new com.vertica.jdbc.VerticaCopyStream((com.vertica.jdbc.VerticaConnection)conn_<%=cid%>,sql_<%=cid %>);
+		vcs_<%=cid%>.start();
+		vcs_<%=cid%>.addStream(fis_<%=cid %>);
+		vcs_<%=cid%>.execute();
+		vcs_<%=cid%>.finish();
+		<%if(isLog4jEnabled){%>
+            log.info("<%=cid%> - Bulk insert data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has finished.");
+        <%}%>
+		long copyNumber_<%=cid%> = vcs_<%=cid%>.getRowCount();
+		
+		//get rejected and accepted row number
+		java.sql.Statement stmt_accept_reject_<%=cid %> = conn_<%=cid %>.createStatement();
+		
+	    java.sql.ResultSet rs_<%=cid %> = stmt_accept_reject_<%=cid %>.executeQuery("select get_num_accepted_rows()");
+	    int accetpedRowNumber_<%=cid%> = 0;
+	    while (rs_<%=cid %>.next()) {
+	    	accetpedRowNumber_<%=cid %> = rs_<%=cid %>.getInt(1);
+		}
+		
+	    rs_<%=cid %> = stmt_accept_reject_<%=cid %>.executeQuery("select get_num_rejected_rows()");
+	    int rejectedRowNumber_<%=cid%> = 0;
+	    while (rs_<%=cid %>.next()) {
+	    	rejectedRowNumber_<%=cid %> = rs_<%=cid %>.getInt(1);
+		}
+		
+		stmt_accept_reject_<%=cid %>.close();
+		
+		if(<%=exitOnNoRows%> && copyNumber_<%=cid%> <= 0){
+			throw new RuntimeException("No record was inserted into component <%=cid %>");
+		}else{
+			<%if(isLog4jEnabled){%>
+				log.info("<%=cid%> - Number of records inserted into table <%=manager.getLProtectedChar()%>" + tableName_<%=cid %> + "<%=manager.getRProtectedChar()%> by <%=cid %>: " + (copyNumber_<%=cid%>)+".");
+			<%}%>
+			System.out.println("Number of records inserted into table <%=manager.getLProtectedChar()%>" + tableName_<%=cid %> + "<%=manager.getRProtectedChar()%> by <%=cid %>: " + (copyNumber_<%=cid%>));
+		}
+		
+		globalMap.put("<%=globalCid %>_ACCEPTED_ROW_NUMBER",accetpedRowNumber_<%=cid %>);
+		globalMap.put("<%=globalCid %>_REJECTED_ROW_NUMBER",rejectedRowNumber_<%=cid%>);
+	   
+<%
+    }
+}
+if(("UPDATE").equals(dataAction) && columnList != null && columnList.size() > 0) {
+%>
+        String tmpTableName_<%=cid%> = "tmp_<%=cid%>" + pid + Thread.currentThread().getId();
+        if(dbschema_<%=cid%> == null || dbschema_<%=cid%>.trim().length() == 0) {
+	    	tableName_<%=cid%> = <%=table%>;
+		} else {
+	    	tableName_<%=cid%> = dbschema_<%=cid%> + "." + <%=table%>;
+	    	tmpTableName_<%=cid%>=dbschema_<%=cid%> + "." + tmpTableName_<%=cid%>;
+		}
+        java.sql.Statement stmtUpdateBulk_<%=cid%> = conn_<%=cid%>.createStatement();
+	<%if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Updating <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> from <%=manager.getLProtectedChar()%>"+tmpTableName_<%=cid%>+"<%=manager.getRProtectedChar()%>.");
+	<%}%>
+        stmtUpdateBulk_<%=cid%>.executeUpdate("<%=manager.getUpdateBulkSQL(columnList)%>");
+	<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Update has finished.");%>
+        stmtUpdateBulk_<%=cid%>.close();
+        tableName_<%=cid%> = tmpTableName_<%=cid%>;
+        java.sql.Statement stmtTmpDrop_<%=cid%> = conn_<%=cid%>.createStatement();
+	<%if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Droping temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>.");
+	<%}%>
+        stmtTmpDrop_<%=cid%>.execute("<%=manager.getDropTableSQL()%>");
+        stmtTmpDrop_<%=cid%>.close();        
+	<%if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Drop temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%>+ "<%=manager.getRProtectedChar()%> has succeeded.");
+	<%}%>
+<%
+}
+%>
+}finally{
+	if(fis_<%=cid %>!=null)
+		fis_<%=cid%>.close();
+<%
+	if(!useExistingConnection) {
+		log4jCodeGenerateUtil.close(node);
+	}
+%>
+}
+
+
+
+
+
+
+
