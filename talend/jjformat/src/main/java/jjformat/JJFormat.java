@@ -46,6 +46,7 @@ public class JJFormat {
 	private File out_dir;
 	private String name_output = "";
 	private boolean debug = false;
+	private boolean moreparenth = true;
 
 	public static void main(String[] args) {
 		JJFormat jjf = new JJFormat();
@@ -79,14 +80,16 @@ public class JJFormat {
 			content = content.substring(2, content.length());
 		}
 		
-		content = content.replaceAll("%>.*", ""); // remove last javajet code
-		content = "public class Gen {\npublic static void main(String[] args) {\n" + content + "\n}\n}";
+		content = content.replaceAll("%>(.|\\s)*", ""); // remove last javajet code
+		content = "public class Gen {\npublic static void main(String[] args) {\n" + content + " // END.\n}\n}";
 		try {
 			content = new Formatter().formatSource(content);
 		} catch (Exception e) {
 			System.out.println("Can't formated java output : " + e.getMessage());
 			System.out.println("Use personal formatter...");
 			e.printStackTrace();
+			
+			content = this.formatJava(content, false);
 		}
 
 		this.jj_versions.put(JJ_JAVA, content);
@@ -97,14 +100,18 @@ public class JJFormat {
 
 		content = escapeHtml4(content);
 
-		content = "<div><pre>\n" + content;
+		content = "<div><pre><code>\n" + content;
 
 		content = content.replaceAll("\n&lt;%",
-				"\n</pre></div>\n<div style=\"background-color: #ffffe6;\"><pre style=\"margin: 0px\">\n&lt;%");
+				"\n</code></pre></div>\n<div style=\"background-color: #ffffe6;\"><pre style=\"margin: 0px\"><code class=\"java\">\n&lt;%");
 		content = content.replaceAll("\n%&gt;",
-				"\n%&gt;\n</pre></div>\n<div style=\"background-color: #e6ffff;\"><pre style=\"margin: 0px\">\n");
+				"\n%&gt;\n</code></pre></div>\n<div style=\"background-color: #e6ffff;\"><pre style=\"margin: 0px\"><code class=\"java\">\n");
 
-		content = "<html><body>" + content + "</body></html>";
+		content = "<html><header>" +
+					//"<link rel=\"stylesheet\" href=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css\">" +
+					//"<script src=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js\"></script>" +
+					//"<script>hljs.initHighlightingOnLoad();</script>" +
+					"</header><body>" + content + "</body></html>";
 
 		this.jj_versions.put(JJ_HTML, content);
 	}
@@ -197,7 +204,7 @@ public class JJFormat {
 						} else {
 							tab_jj--;
 						}
-						if (tab_java < 0 || tab_jj < 0) {
+						if (moreparenth && (tab_java < 0 || tab_jj < 0)) {
 							throw new Exception("Nb tab can't be negative");
 						}
 					}
@@ -325,6 +332,10 @@ public class JJFormat {
 		help.setRequired(false);
 		options.addOption(help);
 		
+		Option moreparenth = new Option("moreparenth", false, "D'ont throw an exception when there are more closing parenthesis (the open can come from another file)");
+		moreparenth.setRequired(false);
+		options.addOption(moreparenth);
+		
 	}
 
 	public void configure(String[] args) {
@@ -358,6 +369,10 @@ public class JJFormat {
 			
 			if (cl.hasOption("help")) {
 				this.displayUsage();
+			}
+			
+			if(cl.hasOption("moreparenth")){
+				this.moreparenth = false;
 			}
 
 		} catch (Exception e) {
