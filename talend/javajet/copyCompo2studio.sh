@@ -1,63 +1,67 @@
 #!/bin/bash
-echo "Copy a dev java jet component into an installated studio."
-echo "This is to not execute studio from eclipse RCP."
 
-tdi_compos_dir="/c/Dev/github2/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components"
-studio_dir="/c/Dev/Talend/Studio/6.5/Talend-Studio-20170804_1931-V6.5.0SNAPSHOT"
-studio_tdi_compo_dir=${studio_dir}"/plugins/org.talend.designer.components.localprovider_6.5.0.20170804_1931-SNAPSHOT/components"
-studio_tdi_conf_dir=${studio_dir}"/configuration"
+usage() 
+{
+	echo "Usage :"
+	echo "copyComponent2studio [options]... [component]..."
+	echo "deploy a list of components to talend studio from source files"
+	echo "-c clean osgi cache"
+	echo "-s start the studio after deploy"
+	echo "-h this message"
+}
 
-export studio_exe="Talend-Studio-win-x86_64.exe"
-export studio_options="-console"
+if [ $# -eq 0 ]; then 
+	usage
+	exit 1	
+fi
 
-compo="undefined"
-[ "$1" != "" ] && compo="$1"
-compo_dir=${tdi_compos_dir}/${compo}
+[ -z "$tdi_compos_dir" ] 		&& tdi_compos_dir="/c/Users/akhabali/dev/github/tdi-studio-ee/main/plugins/org.talend.designer.components.tisprovider/components"
+[ -z "$studio_dir" ] 			&& studio_dir="/c/Users/akhabali/dev/TalendStudio/6.5.0/Talend-Studio-20170929_2250-V6.5.0SNAPSHOT"
+[ -z "$studio_tdi_compo_dir" ] 	&& studio_tdi_compo_dir=${studio_dir}"/plugins/org.talend.designer.components.tisprovider_6.5.0.20170929_2250-SNAPSHOT/components"  
+[ -z "$studio_tdi_conf_dir" ] 	&& studio_tdi_conf_dir=${studio_dir}"/configuration"
 
-# Copy component to the studio
-while ! [ -d $compo_dir ]
+studio_exe="Talend-Studio-win-x86_64.exe"
+studio_options="-console"
+
+REMOVE_CACHE=0
+START_STUDIO=0
+while getopts hsc option 
 do
-	[ "${compo}" != "" ] && echo "${compo} is not a valid component..."
-	read -p "Component name : " compo
-	compo_dir=${tdi_compos_dir}/${compo}
+	case $option in
+		c) REMOVE_CACHE=1 ;;
+		s) START_STUDIO=1 ;;
+		h) usage ;;  
+	esac
 done
 
-echo "Copy ${compo} to ${studio_tdi_compo_dir}"
-cp ${compo_dir}/* ${studio_tdi_compo_dir}/${compo}/
+shift $(($OPTIND - 1))
 
+if [ $# -eq 0 ]; then 
+	usage
+	exit 1	
+fi
 
-remove_cache=""
-
-while [ "${remove_cache}" != "y" ] && [ "${remove_cache}" != "n" ]
+# Copy component to the studio
+for component in $@
 do
-	read -p "Remove eclipse cache ? [y/n] " remove_cache
+	compo_dir=${tdi_compos_dir}/${component}
+	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}/
+	echo "Component ${component} to ${studio_tdi_compo_dir} copied"
 done
 
 # Remove the eclipse cache of the studio
-if [ "${remove_cache}" = "y" ]
+if [ $REMOVE_CACHE -eq 1 ]
 then
 	echo "Remove eclipse configuration cache..."
-	pushd $(pwd)
-	cd studio_tdi_conf_dir
+	cd $studio_tdi_conf_dir
 	rm -rf org.eclipse*
-	popd
 fi
-
-std_exec=""
 
 # Execute the studio
-while [ "${std_exec}" != "y" ] && [ "${std_exec}" != "n" ]
-do
-	read -p "Execute the studio ? [y/n] " std_exec
-done
-
-if [ "${std_exec}" = "y" ]
+if [ $START_STUDIO -eq 1 ]
 then
 	echo "Execute : ${studio_dir}/${studio_exe} ${studio_options}"
-	pushd $(pwd)
-	cd ${studio_dir}
-	./${studio_exe} ${studio_options}
-	popd
+	cd $studio_dir
+	./${studio_exe} ${studio_options} &
 fi
-
-echo "Done."
+exit 0
