@@ -14,6 +14,7 @@ import java.util.Scanner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
@@ -319,6 +320,11 @@ public class JJFormat {
 		Option gen_debug = new Option("debug", false, "Generate debug files");
 		gen_debug.setRequired(false);
 		options.addOption(gen_debug);
+		
+		Option help = new Option("help", false, "Display usage");
+		help.setRequired(false);
+		options.addOption(help);
+		
 	}
 
 	public void configure(String[] args) {
@@ -339,7 +345,7 @@ public class JJFormat {
 			}
 
 			if (!out_dir.isDirectory()) {
-				throw new FileNotFoundException("Given output directory is not a directory : " + dirout_value);
+				throw new FileNotFoundException("Given output files directory is not a directory : " + dirout_value);
 			}
 
 			if (cl.hasOption("name")) {
@@ -349,6 +355,10 @@ public class JJFormat {
 			if (cl.hasOption("debug")) {
 				this.debug = true;
 			}
+			
+			if (cl.hasOption("help")) {
+				this.displayUsage();
+			}
 
 		} catch (Exception e) {
 			System.out.println("Can't parse parameters : " + e.getMessage());
@@ -356,4 +366,10 @@ public class JJFormat {
 		}
 	}
 
+	private void displayUsage() {
+		HelpFormatter hf = new HelpFormatter();
+		hf.printHelp("JJFormat", "This command parse a java jet file to generate another files which help developpers. The main one is xxx_html.html which disinguish java code and generate code with panel of different colors. The code is well formatted too. The number of parenthesis/identatoin is count and should be 0 at the end of the parsing.", this.options, "Example : java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -file /c/Dev/github2/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components/tVerticaBulkExec/tVerticaBulkExec_end.javajet -out_dir /c/temp/tVerticaBulkExec/ -name -debug");
+		System.exit(0);
+	}
+	
 }
