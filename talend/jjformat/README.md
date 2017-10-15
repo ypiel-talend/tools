@@ -12,7 +12,9 @@ This project uses _maven-assembly-plugin_ to generate one jar with all its neede
 
 ## Usage ##
 `$ java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -help`
+
 usage: `JJFormat`
+
 This command parse a java jet file to generate another files which help developpers. The main one is xxx_html.html which disinguishes javajet code and generated one with panel of different colors and syntax highlight. The code is well formatted too. The number of parenthesis/identation is counted and should be 0 at the end of the parsing.
 ```
  -debug           Generate debug files
@@ -24,5 +26,7 @@ This command parse a java jet file to generate another files which help developp
  -out_dir <arg>   Output directory
  ```
 
-Example : `java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -file /c/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components/tVerticaBulkExec/tVerticaBulkExec_end.javajet -out_dir /c/temp/tVerticaBulkExec/ -name -debug`
-
+Example :
+```
+java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -file /c/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components/tVerticaBulkExec/tVerticaBulkExec_end.javajet -out_dir /c/temp/tVerticaBulkExec/ -name -debug
+```
