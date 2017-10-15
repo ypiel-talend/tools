@@ -103,14 +103,14 @@ public class JJFormat {
 		content = "<div><pre><code>\n" + content;
 
 		content = content.replaceAll("\n&lt;%",
-				"\n</code></pre></div>\n<div style=\"background-color: #ffffe6;\"><pre style=\"margin: 0px\"><code class=\"java\">\n&lt;%");
+				"\n</code></pre></div>\n<div><pre style=\"margin: 0px\"><code class=\"java\" style=\"overflow-x: hidden;\">\n&lt;%");
 		content = content.replaceAll("\n%&gt;",
-				"\n%&gt;\n</code></pre></div>\n<div style=\"background-color: #e6ffff;\"><pre style=\"margin: 0px\"><code class=\"java\">\n");
+				"\n%&gt;\n</code></pre></div>\n<div><pre style=\"margin: 0px\"><code class=\"java\" style=\"background-color: #8f8f8f; overflow-x: hidden;\">\n");
 
 		content = "<html><header>" +
-					//"<link rel=\"stylesheet\" href=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css\">" +
-					//"<script src=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js\"></script>" +
-					//"<script>hljs.initHighlightingOnLoad();</script>" +
+					"<link rel=\"stylesheet\" href=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/dracula.min.css\">" +
+					"<script src=\"http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js\"></script>" +
+					"<script>hljs.initHighlightingOnLoad();</script>" +
 					"</header><body>" + content + "</body></html>";
 
 		this.jj_versions.put(JJ_HTML, content);
