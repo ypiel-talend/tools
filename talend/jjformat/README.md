@@ -7,6 +7,8 @@ JJFormat is a small tool, quickly developped with some dirty code, to help in re
 * It generates an html file with syntax highlight and well distinguished sections
 * It generates a pure java file with all generated section replaced by sysout
 
+![Generated HTML](https://github.com/ypiel-talend/tools/blob/master/talend/jjformat/resources/screenshot.png)
+
 ## Build ##
 This project uses _maven-assembly-plugin_ to generate one jar with all its needed dependencies inside. It is configured to generate the assembly jar in package phase. So you only have to do `mvn clean package` then it generates jjformat-_version_-jar-with-dependencies.jar in target folder.
 
