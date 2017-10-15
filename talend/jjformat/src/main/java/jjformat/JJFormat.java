@@ -125,8 +125,6 @@ public class JJFormat {
 	private String formatJava(String content, boolean debug) {
 		String java_parenthesis_flow = "";
 
-		// String content = this.jj_versions.get(JJ_NORMALIZED);
-
 		content = content.replaceAll("\"@\\{[a-zA-Z.-_]+\\}", "\"@xxxxxx");
 		content = content.replaceAll("<%([^=])", "\n<%\n$1");
 		content = content.replaceAll("%>", "\n%>\n");
@@ -136,6 +134,7 @@ public class JJFormat {
 		content = content.replaceAll(";", ";\n");
 		content = content.replaceAll("\\{", "\\{\n");
 		content = content.replaceAll("\\}", "\\}\n");
+		content = content.replaceAll("for\\(([^|\n]+)\\|([^|\n]+)\\|([^)\n]+)\\)", "for($1;$2;$3)");
 
 		String newContent = "";
 		try {
@@ -311,13 +310,13 @@ public class JJFormat {
 		}
 	}
 
-	private void buildOptions() {
+	private void buildOptions() {	
 		Option oFile = new Option("file", true, "Javajet input file");
-		oFile.setRequired(true);
+		oFile.setRequired(false);
 		options.addOption(oFile);
 
 		Option oOut_dir = new Option("out_dir", true, "Output directory");
-		oOut_dir.setRequired(true);
+		oOut_dir.setRequired(false);
 		options.addOption(oOut_dir);
 
 		Option oName = new Option("name", false, "Name output with component name");
@@ -342,6 +341,10 @@ public class JJFormat {
 		try {
 			CommandLineParser clp = new DefaultParser();
 			CommandLine cl = clp.parse(this.options, args);
+			
+			if (cl.hasOption("help")) {
+				this.displayUsage();
+			}
 
 			String fileValue = cl.getOptionValue("file");
 			jj_file = new File(fileValue);
@@ -367,10 +370,6 @@ public class JJFormat {
 				this.debug = true;
 			}
 			
-			if (cl.hasOption("help")) {
-				this.displayUsage();
-			}
-			
 			if(cl.hasOption("moreparenth")){
 				this.moreparenth = false;
 			}
@@ -383,7 +382,7 @@ public class JJFormat {
 
 	private void displayUsage() {
 		HelpFormatter hf = new HelpFormatter();
-		hf.printHelp("JJFormat", "This command parse a java jet file to generate another files which help developpers. The main one is xxx_html.html which disinguish java code and generate code with panel of different colors. The code is well formatted too. The number of parenthesis/identatoin is count and should be 0 at the end of the parsing.", this.options, "Example : java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -file /c/Dev/github2/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components/tVerticaBulkExec/tVerticaBulkExec_end.javajet -out_dir /c/temp/tVerticaBulkExec/ -name -debug");
+		hf.printHelp("JJFormat", "This command parse a java jet file to generate another files which help developpers. The main one is xxx_html.html which disinguishes javajet code and generated one with panel of different colors and syntax highlight. The code is well formatted too. The number of parenthesis/identation is count and should be 0 at the end of the parsing.", this.options, "Example : java -jar target/jjformat-0.0.1-SNAPSHOT-jar-with-dependencies.jar -file /c/Dev/github2/tdi-studio-se/main/plugins/org.talend.designer.components.localprovider/components/tVerticaBulkExec/tVerticaBulkExec_end.javajet -out_dir /c/temp/tVerticaBulkExec/ -name -debug");
 		System.exit(0);
 	}
 	
