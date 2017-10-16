@@ -28,7 +28,6 @@ echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
 echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
 echo ""
 
-exit 44
 
 studio_exe="Talend-Studio-win-x86_64.exe"
 studio_options="-console"
