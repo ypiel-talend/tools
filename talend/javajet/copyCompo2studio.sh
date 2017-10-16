@@ -20,6 +20,16 @@ fi
 [ -z "$studio_tdi_compo_dir" ] 	&& studio_tdi_compo_dir=${studio_dir}"/plugins/org.talend.designer.components.tisprovider_6.5.0.20170929_2250-SNAPSHOT/components"  
 [ -z "$studio_tdi_conf_dir" ] 	&& studio_tdi_conf_dir=${studio_dir}"/configuration"
 
+[ -f ~/.copycompo2studio ] && echo "Loading " ~/.copycompo2studio && source ~/.copycompo2studio
+
+echo "Environment :"
+echo "    - Components folder: " $tdi_compos_dir
+echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
+echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
+echo ""
+
+exit 44
+
 studio_exe="Talend-Studio-win-x86_64.exe"
 studio_options="-console"
 
@@ -30,7 +40,7 @@ do
 	case $option in
 		c) REMOVE_CACHE=1 ;;
 		s) START_STUDIO=1 ;;
-		h) usage ;;  
+		h) usage ;;
 	esac
 done
 
@@ -45,6 +55,8 @@ fi
 for component in $@
 do
 	compo_dir=${tdi_compos_dir}/${component}
+	! [ -d "${compo_dir}" ] && echo "Compo dir doesn't exit : ${compo_dir}" && exit 1
+	! [ -d "${studio_tdi_compo_dir}/${component}/" ] && echo "Destination compo dir doesn't exit : ${studio_tdi_compo_dir}/${component}/" && exit 1
 	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}/
 	echo "Component ${component} to ${studio_tdi_compo_dir} copied"
 done
@@ -62,6 +74,5 @@ if [ $START_STUDIO -eq 1 ]
 then
 	echo "Execute : ${studio_dir}/${studio_exe} ${studio_options}"
 	cd $studio_dir
-	./${studio_exe} ${studio_options} &
+	./${studio_exe} ${studio_options}
 fi
-exit 0
