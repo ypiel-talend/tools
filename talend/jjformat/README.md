@@ -22,7 +22,7 @@ This command parse a java jet file to generate another files which help developp
  -debug           Generate debug files
  -file <arg>      Javajet input file
  -help            Display usage
- -moreparenth     D'ont throw an exception when there are more closing
+ -moreparenth     Don't throw an exception when there are more closing
                   parenthesis (the open can come from another file)
  -name            Name output with component name
  -out_dir <arg>   Output directory
