@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<COMPONENT>
+    <PARAMETERS>
+        <PARAMETER FIELD="TEXT" NAME="MyName" NUM_ROW="0"/>
+    </PARAMETERS>
+</COMPONENT>
