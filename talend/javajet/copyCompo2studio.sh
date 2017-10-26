@@ -10,10 +10,6 @@ usage()
 	echo "-h this message"
 }
 
-if [ $# -eq 0 ]; then 
-	usage
-	exit 1	
-fi
 
 [ -z "$tdi_compos_dir" ] 		&& tdi_compos_dir="/c/Users/akhabali/dev/github/tdi-studio-ee/main/plugins/org.talend.designer.components.tisprovider/components"
 [ -z "$studio_dir" ] 			&& studio_dir="/c/Users/akhabali/dev/TalendStudio/6.5.0/Talend-Studio-20170929_2250-V6.5.0SNAPSHOT"
@@ -28,6 +24,10 @@ echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
 echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
 echo ""
 
+if [ $# -eq 0 ]; then 
+	usage
+	exit 1	
+fi
 
 studio_exe="Talend-Studio-win-x86_64.exe"
 studio_options="-console"
