@@ -3,7 +3,7 @@
 usage() 
 {
 	echo "Usage :"
-	echo "copyComponent2studio [options]... [component]..."
+	echo "copyComponent2studio [options]... [component]... [-- libraries...]"
 	echo "deploy a list of components to talend studio from source files"
 	echo "-c clean osgi cache"
 	echo "-s start the studio after deploy"
@@ -50,15 +50,23 @@ if [ $# -eq 0 ]; then
 	exit 1	
 fi
 
+libs=0
+
 # Copy component to the studio
 for component in $@
 do
+	[ "${component}" == "--" ] && libs=1 && break # if -- then after they are libraries to copy into studio
 	compo_dir=${tdi_compos_dir}/${component}
 	! [ -d "${compo_dir}" ] && echo "Compo dir doesn't exit : ${compo_dir}" && exit 1
 	! [ -d "${studio_tdi_compo_dir}/${component}/" ] && echo "Destination compo dir doesn't exit : ${studio_tdi_compo_dir}/${component}/" && exit 1
 	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}/
 	echo "Component ${component} to ${studio_tdi_compo_dir} copied"
 done
+
+if [ ${libs} -eq 1 ]; then
+	echo "Copy libs"
+	echo "TO DO...."
+fi
 
 # Remove the eclipse cache of the studio
 if [ $REMOVE_CACHE -eq 1 ]
