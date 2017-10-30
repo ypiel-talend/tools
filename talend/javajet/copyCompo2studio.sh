@@ -6,6 +6,7 @@ usage()
 	echo "copyComponent2studio [options]... [component]... [-- libraries...]"
 	echo "deploy a list of components to talend studio from source files"
 	echo "-c clean osgi cache"
+	echo "-l list components with given pattern"
 	echo "-s start the studio after deploy"
 	echo "-h this message"
 }
@@ -34,11 +35,13 @@ studio_options="-console"
 
 REMOVE_CACHE=0
 START_STUDIO=0
-while getopts hsc option 
+LIST_COMPO=0
+while getopts hscl option 
 do
 	case $option in
 		c) REMOVE_CACHE=1 ;;
 		s) START_STUDIO=1 ;;
+		l) LIST_COMPO=1 ;;
 		h) usage ;;
 	esac
 done
@@ -48,6 +51,13 @@ shift $(($OPTIND - 1))
 if [ $# -eq 0 ]; then 
 	usage
 	exit 1	
+fi
+
+if [ $LIST_COMPO -eq 1 ]
+then
+	echo "List components with given pattern '$1' :"
+	find ${tdi_compos_dir} -maxdepth 1 -type d -name "$1" -exec basename {} \;
+	exit 0
 fi
 
 libs=0
