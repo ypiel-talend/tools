@@ -56,7 +56,7 @@ fi
 if [ $LIST_COMPO -eq 1 ]
 then
 	echo "List components with given pattern '$1' :"
-	find ${tdi_compos_dir} -maxdepth 1 -type d -name "$1" -exec basename {} \;
+	find ${tdi_compos_dir} -maxdepth 1 -type d -iname "$1" -exec basename {} \;
 	exit 0
 fi
 
