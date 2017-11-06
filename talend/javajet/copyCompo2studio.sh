@@ -78,6 +78,7 @@ else
 	[ "${resp}" != "y" ] && echo "aborded..." && exit 1
 fi
 
+REFRESH=0
 for component in ${LIST_COMPO}
 do
 	[ "${component}" == "--" ] && libs=1 && break # if -- then after they are libraries to copy into studio
@@ -86,6 +87,7 @@ do
 	! [ -d "${studio_tdi_compo_dir}/${component}/" ] && echo "Destination compo dir doesn't exit : ${studio_tdi_compo_dir}/${component}/" && exit 1
 	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}/
 	echo "Component ${component} to ${studio_tdi_compo_dir} copied"
+	REFRESH=1
 done
 
 if [ ${libs} -eq 1 ]; then
@@ -107,4 +109,6 @@ then
 	echo "Execute : ${studio_dir}/${studio_exe} ${studio_options}"
 	cd $studio_dir
 	./${studio_exe} ${studio_options}
+else
+	[ $REFRESH -eq 1 ] && echo "" && echo "Please, refresh studio with CTRL+SHIFT+F3"
 fi
