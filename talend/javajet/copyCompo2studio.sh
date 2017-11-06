@@ -7,6 +7,7 @@ usage()
 	echo "deploy a list of components to talend studio from source files"
 	echo "-c clean osgi cache"
 	echo "-l list components with given pattern"
+	echo "-L list and copy components with given pattern"
 	echo "-s start the studio after deploy"
 	echo "-h this message"
 }
@@ -36,12 +37,14 @@ studio_options="-console"
 REMOVE_CACHE=0
 START_STUDIO=0
 LIST_COMPO=0
-while getopts hscl option 
+COPY_LIST=0
+while getopts hsclL option 
 do
 	case $option in
 		c) REMOVE_CACHE=1 ;;
 		s) START_STUDIO=1 ;;
 		l) LIST_COMPO=1 ;;
+		L) COPY_LIST=1 && LIST_COMPO=1 ;;
 		h) usage ;;
 	esac
 done
@@ -53,17 +56,29 @@ if [ $# -eq 0 ]; then
 	exit 1	
 fi
 
+
+LIST_COMPOS=""
 if [ $LIST_COMPO -eq 1 ]
 then
 	echo "List components with given pattern '$1' :"
-	find ${tdi_compos_dir} -maxdepth 1 -type d -iname "$1" -exec basename {} \;
-	exit 0
+	LIST_COMPO=$(find ${tdi_compos_dir} -maxdepth 1 -type d -iname "$1" -exec basename {} \;)
+	for c in ${LIST_COMPO}; do
+		echo "	- " ${c}
+	done
+	[ $COPY_LIST -eq 0 ] && exit 0
 fi
 
 libs=0
 
 # Copy component to the studio
-for component in $@
+if [ $COPY_LIST -eq 0 ]; then
+	LIST_COMPO=$@
+else
+	read -p "Copy all found components ? [y/n]" resp
+	[ "${resp}" != "y" ] && echo "aborded..." && exit 1
+fi
+
+for component in ${LIST_COMPO}
 do
 	[ "${component}" == "--" ] && libs=1 && break # if -- then after they are libraries to copy into studio
 	compo_dir=${tdi_compos_dir}/${component}
