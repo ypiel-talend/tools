@@ -5,6 +5,7 @@ usage()
 	echo "Usage :"
 	echo "copyComponent2studio [options]... [component]... [-- libraries...]"
 	echo "deploy a list of components to talend studio from source files"
+	echo "-d Duplicate a component. It accepts only on component name. It duplicates it with a suffix, so you can copy an old version of your component in your studio."
 	echo "-c clean osgi cache"
 	echo "-l list components with given pattern"
 	echo "-L list and copy components with given pattern"
@@ -31,6 +32,7 @@ if [ $# -eq 0 ]; then
 	exit 1	
 fi
 
+duplicate_suffix=""
 studio_exe="Talend-Studio-win-x86_64.exe"
 studio_options="-console"
 
@@ -38,13 +40,15 @@ REMOVE_CACHE=0
 START_STUDIO=0
 LIST_COMPO=0
 COPY_LIST=0
-while getopts hsclL option 
+DUPLICATE=0
+while getopts dhsclL option 
 do
 	case $option in
 		c) REMOVE_CACHE=1 ;;
 		s) START_STUDIO=1 ;;
 		l) LIST_COMPO=1 ;;
 		L) COPY_LIST=1 && LIST_COMPO=1 ;;
+		d) DUPLICATE=1 && duplicate_suffix="dup";;
 		h) usage ;;
 	esac
 done
@@ -54,6 +58,17 @@ shift $(($OPTIND - 1))
 if [ $# -eq 0 ]; then 
 	usage
 	exit 1	
+fi
+
+# Duplicate a component to the studio
+if [ $DUPLICATE -eq 1 ]
+then
+	echo "Duplicate is over all other command..."
+	if [ "$#" -ne 1 ]; then
+		echo "There should be only one parameter for duplicate, the component name" && exit 1
+	fi
+	LIST_COMPO=0
+	COPY_LIST=0
 fi
 
 
@@ -85,8 +100,19 @@ do
 	compo_dir=${tdi_compos_dir}/${component}
 	! [ -d "${compo_dir}" ] && echo "Compo dir doesn't exit : ${compo_dir}" && exit 1
 	! [ -d "${studio_tdi_compo_dir}/${component}/" ] && echo "Destination compo dir doesn't exit : ${studio_tdi_compo_dir}/${component}/" && exit 1
-	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}/
-	echo "Component ${component} to ${studio_tdi_compo_dir} copied"
+	[ $DUPLICATE -eq 1 ] && mkdir -p ${studio_tdi_compo_dir}/${component}${duplicate_suffix}/ && rm -rf  ${studio_tdi_compo_dir}/${component}${duplicate_suffix}/*
+	cp ${compo_dir}/* ${studio_tdi_compo_dir}/${component}${duplicate_suffix}/
+	if [ $DUPLICATE -eq 1 ]
+	then
+		pushd $(pwd)
+		cd ${studio_tdi_compo_dir}/${component}${duplicate_suffix}/ 
+		echo "Rename all files fo duplciation in $(pwd)"
+		find . -name "${component}*" | sed -e "s,./\(${component}\)\(.*\),mv \1\2 \1${duplicate_suffix}\2," | while read cmd; do $cmd; done
+		echo "Component ${component} duplicated to ${studio_tdi_compo_dir} with suffix '${duplicate_suffix}'"
+		popd
+	else
+		echo "Component ${component} to ${studio_tdi_compo_dir} copied"
+	fi
 	REFRESH=1
 done
 
