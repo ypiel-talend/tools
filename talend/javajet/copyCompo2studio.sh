@@ -19,13 +19,7 @@ usage()
 [ -z "$studio_tdi_compo_dir" ] 	&& studio_tdi_compo_dir=${studio_dir}"/plugins/org.talend.designer.components.tisprovider_6.5.0.20170929_2250-SNAPSHOT/components"  
 [ -z "$studio_tdi_conf_dir" ] 	&& studio_tdi_conf_dir=${studio_dir}"/configuration"
 
-[ -f ~/.copycompo2studio ] && echo "Loading " ~/.copycompo2studio && source ~/.copycompo2studio
 
-echo "Environment :"
-echo "    - Components folder: " $tdi_compos_dir
-echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
-echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
-echo ""
 
 if [ $# -eq 0 ]; then 
 	usage
@@ -41,9 +35,11 @@ START_STUDIO=0
 LIST_COMPO=0
 COPY_LIST=0
 DUPLICATE=0
-while getopts dhsclL option 
+MULTI_ENV=0
+while getopts dhsclLe option 
 do
 	case $option in
+		e) MULTI_ENV=1 ;;
 		c) REMOVE_CACHE=1 ;;
 		s) START_STUDIO=1 ;;
 		l) LIST_COMPO=1 ;;
@@ -52,6 +48,30 @@ do
 		h) usage ;;
 	esac
 done
+
+env_file=~/.copycompo2studio
+if [ $MULTI_ENV -eq 1 ]
+then
+	i_env=0
+	env_files=$(find ~/ -maxdepth 1 -type f -name ".copycompo2studio*")
+	for ce in ${env_files}; do
+		i_env=$((i_env + 1))
+		echo "	" $i_env ". " ${ce}
+	done
+	read -p "Select an environment [1..$i_env]: " selEnv 
+
+	declare -a array_env=($env_files)
+	env_file=${array_env[$((selEnv - 1))]}
+fi
+
+[ -f ${env_file} ] && echo "Loading environment from " $env_file && source $env_file
+
+echo "Environment :"
+echo "    - Components folder: " $tdi_compos_dir
+echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
+echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
+echo ""
+exit 1
 
 shift $(($OPTIND - 1))
 
