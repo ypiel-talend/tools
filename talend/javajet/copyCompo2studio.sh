@@ -71,7 +71,6 @@ echo "    - Components folder: " $tdi_compos_dir
 echo "    - Studio tdi compo folder: " $studio_tdi_compo_dir
 echo "    - Studio tdi conf folder: " $studio_tdi_conf_dir
 echo ""
-exit 1
 
 shift $(($OPTIND - 1))
 
