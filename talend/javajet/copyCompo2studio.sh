@@ -5,12 +5,13 @@ usage()
 	echo "Usage :"
 	echo "copyComponent2studio [options]... [component]... [-- libraries...]"
 	echo "deploy a list of components to talend studio from source files"
+	echo "-c CLean osgi cache"
 	echo "-d Duplicate a component. It accepts only on component name. It duplicates it with a suffix, so you can copy an old version of your component in your studio."
-	echo "-c clean osgi cache"
-	echo "-l list components with given pattern"
-	echo "-L list and copy components with given pattern"
-	echo "-s start the studio after deploy"
-	echo "-h this message"
+	echo "-e Chose your environement between all ~/.copycompo2studio* files"
+	echo "-l List components with given pattern"
+	echo "-L List and copy components with given pattern"
+	echo "-s Start the studio after deploy"
+	echo "-h This message"
 }
 
 
