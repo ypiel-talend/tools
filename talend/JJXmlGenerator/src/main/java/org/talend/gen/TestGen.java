@@ -29,14 +29,15 @@ public class TestGen {
             PARAMETERS params = new PARAMETERS();
             PARAMETER p = new PARAMETER();
             p.setNAME("MyName");
-            p.setFIELD("TEXT");
+            p.setFIELD("PASSWORD");
             params.getPARAMETER().add(p);
             
             c.setPARAMETERS(params);
             
             CONNECTOR conn = new CONNECTOR();
             conn.setNOTSHOWIF("");
-            
+
+
             return c;
         }
         

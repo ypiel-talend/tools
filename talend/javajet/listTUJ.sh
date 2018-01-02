@@ -5,7 +5,8 @@ usage()
 	echo "Usage :"
 	echo "listTUJ name"
 	echo "List available TUJ by their name and copy them to a folder to make easy their import in studio."
-	echo "-c clean output dir before copy."
+	echo "-c clean output dir before copy"
+	echo "-t copy template too"
 }
 
 
@@ -29,10 +30,12 @@ if [ $# -eq 0 ]; then
 	exit 1	
 fi
 
-while getopts hc option 
+COPY_TEMPLATE=0
+while getopts hct option 
 do
 	case $option in
-		c) echo "Clean output folder..." && rm -rf ${output_tuj_dir}/* ;;
+		c) echo "Clean output folder..." && rm -rf ${output_tuj_dir}/*  ;;
+		t) COPY_TEMPLATE=1 ;;
 		h) usage ;;
 	esac
 done
@@ -52,3 +55,8 @@ for t in ${LIST_TUJS}; do
 done
 
 echo "TUJs copied into ${output_tuj_dir}."
+
+if [ $COPY_TEMPLATE -eq 1 ]
+then
+	[ -d "${tuj_template}" ] && cp -R ${tuj_template} ${output_tuj_dir}/ && echo "Template copied too."
+fi
