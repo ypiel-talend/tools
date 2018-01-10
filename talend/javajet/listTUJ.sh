@@ -7,6 +7,7 @@ usage()
 	echo "List available TUJ by their name and copy them to a folder to make easy their import in studio."
 	echo "-c clean output dir before copy"
 	echo "-t copy template too"
+	exit 0
 }
 
 
